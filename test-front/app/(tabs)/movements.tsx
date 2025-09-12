@@ -1,19 +1,13 @@
-import React, { useState } from 'react';
-import {
-  ActivityIndicator,
-  Dimensions,
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from 'react-native';
-
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useQuery } from '@tanstack/react-query';
+import axios from "axios";
+import { useState } from "react";
+import { ActivityIndicatorBase, Dimensions, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from 'react-native';
+
+
 
 
 interface Move {
@@ -57,12 +51,9 @@ export default function MovementsScreen() {
   const [selectedMove, setSelectedMove] = useState<MoveDetails | null>(null);
   const [page, setPage] = useState(0);
   const limit = 20;
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [movesData, setMovesData] = useState<MoveDetails[] | null>(null);
 
-
-  /*const {
+  // Query para obtener la lista de movimientos  
+  const {
     data: movesData,
     isLoading,
     error,
@@ -71,10 +62,11 @@ export default function MovementsScreen() {
   } = useQuery({
     queryKey: ['pokemon-moves', page],
     queryFn: async () => {
-      try {
+      try {        
         const offset = page * limit;
         const response = await axios.get<MovesResponse>(
-          `https://pokeapi.co/api/v2/move?limit=${limit}&offset=${offset}`
+          `http://localhost:15050/api/v2/move`
+          //`https://pokeapi.co/api/v2/move?limit=${limit}&offset=${offset}`
         );
 
         // Obtener detalles de cada movimiento
@@ -85,34 +77,48 @@ export default function MovementsScreen() {
 
         const moveDetails = await Promise.all(moveDetailsPromises);
 
+        
         // Guardar en cache offline
-        await offlineStorage.setItem(`pokemon-moves-${page}`, {
+        /*await offlineStorage.setItem(`pokemon-moves-${page}`, {
           data: moveDetails,
           timestamp: new Date().toISOString(),
-        });
+        });*/
 
-        return moveDetails;
+        // Guardar en caché
+        await AsyncStorage.setItem(
+        `pokemon-moves-${page}`,
+        JSON.stringify({
+            data: moveDetails,
+            timestamp: new Date().toISOString(),
+        })
+        );
+
+        // Leer de caché
+        const cachedDataString = await AsyncStorage.getItem(`pokemon-moves-${page}`);
+        if (cachedDataString) {
+        const cachedData = JSON.parse(cachedDataString);
+        return cachedData.data;
+        }
+
+
+
+//        return moveDetails;
       } catch (error) {
         // Intentar cargar desde cache offline
-        const cachedData = await offlineStorage.getItem(`pokemon-moves-${page}`);
+        /*const cachedData = await offlineStorage.getItem(`pokemon-moves-${page}`);
         if (cachedData) {
           Alert.alert('Sin conexión', 'Mostrando datos guardados offline');
           return cachedData.data;
         }
-        throw error;
+        throw error;*/
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
-  });*/
-
-
-  const refetch = async () => {
-    setIsLoading(true);
-    setError(null); 
-  }
+  });
 
   const handleLoadMoves = () => {
-    //refetch();
+    alert('CARGANDO DE MOVIMIENTOS DE PRUBAAS');
+    refetch();
   };
 
   const handleNextPage = () => {
@@ -199,7 +205,7 @@ export default function MovementsScreen() {
           </ThemedText>
           <TouchableOpacity
             style={[styles.retryButton, { backgroundColor: colors.tint }]}
-            onPress={() => console.log('regresd')}
+            onPress={() => refetch()}
           >
             <Text style={styles.retryButtonText}>Reintentar</Text>
           </TouchableOpacity>
@@ -217,10 +223,10 @@ export default function MovementsScreen() {
           onPress={handleLoadMoves}
           disabled={isLoading}
         >
-          {isLoading  ? (
-            <ActivityIndicator color="#fff" />
+          {isLoading || isRefetching ? (
+            <ActivityIndicatorBase color="#fff" />
           ) : (
-            <Text style={styles.loadButtonText}>Cargar Movimientossss</Text>
+            <Text style={styles.loadButtonText}>Cargar Movimientos</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -234,7 +240,7 @@ export default function MovementsScreen() {
             contentContainerStyle={styles.listContainer}
             refreshControl={
               <RefreshControl
-                refreshing={false}
+                refreshing={isRefetching}
                 onRefresh={refetch}
                 tintColor={colors.tint}
               />
