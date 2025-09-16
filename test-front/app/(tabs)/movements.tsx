@@ -1,4 +1,4 @@
-import { ThemedText } from '@/components/ThemedText';
+/*import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -82,7 +82,7 @@ export default function MovementsScreen() {
         /*await offlineStorage.setItem(`pokemon-moves-${page}`, {
           data: moveDetails,
           timestamp: new Date().toISOString(),
-        });*/
+        });
 
         // Guardar en caché
         await AsyncStorage.setItem(
@@ -110,7 +110,7 @@ export default function MovementsScreen() {
           Alert.alert('Sin conexión', 'Mostrando datos guardados offline');
           return cachedData.data;
         }
-        throw error;*/
+        throw error;
       }
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
@@ -277,7 +277,7 @@ export default function MovementsScreen() {
         </>
       )}
 
-      {/* Modal de detalles (simplificado para este ejemplo) */}
+      {/* Modal de detalles (simplificado para este ejemplo) }
       {selectedMove && (
         <View style={styles.modal}>
           <View style={[styles.modalContent, { backgroundColor: colorScheme === 'dark' ? '#222' : '#fff' }]}>
@@ -452,4 +452,121 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+});
+
+*/
+
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
+
+interface Cliente {
+  id: number;
+  nombre: string;
+  email: string;
+}
+
+export interface Pelicula{
+    name: string;
+    url: string;
+}
+
+export interface PokeRequest {
+  count: string;
+  next: string;
+  previous: string;
+  results: Pelicula[];
+}
+
+
+export default function ClientesScreen() {
+  //const [clientes, setClientes] = useState<Cliente[]>([]);
+  //const [loading, setLoading] = useState(true);
+
+  const [pokeRequest, setPokeRequest] = useState<PokeRequest | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Llamada a la API en Java (Spring Boot, Quarkus, etc.)
+ /* useEffect(() => {
+    fetch("http://localhost:15050/api/v2/move") // cambia TU_IP y PUERTO
+      .then((res) => res.json())
+      .then((data) => setClientes(data))
+      .catch((error) => console.error("Error al obtener data:", error))
+      .finally(() => setLoading(false));
+  }, []);*/
+
+      useEffect(() => {
+      // ⚠️ IMPORTANTE:
+      // Si tu API está en local, cambia la URL:
+      // Android emulator: http://10.0.2.2:3000/...
+      // iOS simulator: http://localhost:3000/...
+      // Dispositivo real: http://TU-IP:3000/...
+      fetch("http://localhost:15050/api/v2/move")
+        .then((res) => res.json())
+        .then((json) => {
+          setPokeRequest(json);
+          console.log('DATOS DE PRUEBAS: '+json);
+        })
+        .catch((err) => console.error("Error:", err))
+        .finally(() => setLoading(false));
+    }, []);
+
+  // Renderizado de cada fila
+  const renderItem = ({ item }: { item: Pelicula }) => (
+    <View style={styles.row}>
+      <Text style={[styles.cell, { flex: 2 }]}>{item.name}</Text>
+      <Text style={[styles.cell, { flex: 3 }]}>{item.url}</Text>      
+    </View>
+  );
+
+  return (
+    <View style={styles01.container}>
+      <Text style={styles01.title}>📋 Lista de Peliculas</Text>
+
+      <View style={styles.infoBox}>
+        <Text style={styles.label}>Total: {pokeRequest?.count}</Text>
+        <Text style={styles.label}>Siguiente: {pokeRequest?.next}</Text>
+        <Text style={styles.label}>Anterior: {pokeRequest?.previous}</Text>
+      </View>
+
+      {/* Cabecera */}
+      <View style={[styles01.row, styles01.header]}>
+        <Text style={[styles01.cell, { flex: 1, fontWeight: "bold" }]}>name</Text>
+        <Text style={[styles01.cell, { flex: 2, fontWeight: "bold" }]}>url</Text>        
+      </View>
+
+      {loading ? (
+        <ActivityIndicator size="large" color="blue" style={{ marginTop: 20 }} />
+      ) : (
+        <FlatList
+          data={pokeRequest?.results || []}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={renderItem}
+          contentContainerStyle={styles.list}
+        />
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 16 },
+  infoBox: { marginBottom: 20 },
+  label: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
+  list: { marginTop: 10 },
+  row: { flexDirection: "row", paddingVertical: 8, borderBottomWidth: 1, borderColor: "#ccc" },
+  cell: { fontSize: 14, paddingHorizontal: 8 },
+});
+
+const styles01 = StyleSheet.create({
+  container: { flex: 1, padding: 16, backgroundColor: "#fff" },
+  title: { fontSize: 22, fontWeight: "bold", marginBottom: 12, textAlign: "center" },
+  row: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  header: { backgroundColor: "#f0f0f0" },
+  cell: { paddingHorizontal: 6, fontSize: 14 },
 });

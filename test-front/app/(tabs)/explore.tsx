@@ -3,6 +3,7 @@ import { StyleSheet } from 'react-native';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import MovementsScreen from '@/components/ui/consumoPoke/pokefront';
+import ClientesScreen from './movements';
 
 export default function TabTwoScreen() {
   return (
@@ -18,6 +19,7 @@ export default function TabTwoScreen() {
       }>
       
       <MovementsScreen/>
+      <ClientesScreen/>
     </ParallaxScrollView>
   );
 }
